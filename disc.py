@@ -23,11 +23,12 @@ class MyClient(discord.Client):
 
     async def on_message(self, message: discord.Message):
         """Handle incoming messages"""
+
+        # stop bot from replying to itself
         if message.author == client.user:
             return
 
         channel = message.channel
-
         if "Direct Message" not in str(channel):
             await message.channel.send("I only reply in DMs")
             return
@@ -78,6 +79,9 @@ class MyClient(discord.Client):
                 )
                 respuesta = completion.choices[0].message["content"]
                 await message.channel.send(respuesta.encode("utf-8").decode("utf-8"))
+            else:
+                await message.channel.send("I can't understand that, please try again.")
+                return
         else:
             await message.channel.send("I only reply to voice notes")
 
