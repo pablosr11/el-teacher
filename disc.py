@@ -1,4 +1,4 @@
-# This example requires the 'message_content' intent.
+"""Discord bot to transcribe voice notes and reply with feedback"""
 import os
 
 import asynctempfile
@@ -11,22 +11,24 @@ import whisper
 GPT_MODEL = "gpt-3.5-turbo"
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-model = whisper.load_model("base")
+MODEL = whisper.load_model("base")
 
 
 intents = discord.Intents.default()
-intents.message_content = True
+intents.message_content = True  # pylint: disable=locally-disabled, multiple-statements, assigning-non-slot, line-too-long
 
 client = discord.Client(intents=intents)
 
 
 @client.event
 async def on_ready():
+    """Handle bot ready event"""
     print(f"We have logged in as {client.user}")
 
 
 @client.event
 async def on_message(message: discord.Message):
+    """Handle incoming messages"""
     if message.author == client.user:
         return
 
@@ -40,14 +42,16 @@ async def on_message(message: discord.Message):
         url = message.attachments[0].url
 
         async with httpx.AsyncClient() as httpx_client:
-            r = await httpx_client.get(url)
-            b_content = r.content
+            resp = await httpx_client.get(url)
+            b_content = resp.content
 
-        async with asynctempfile.NamedTemporaryFile("wb+") as f:
-            await f.write(b_content)
-            await f.seek(0)
+        async with asynctempfile.NamedTemporaryFile("wb+") as tmpfile:
+            await tmpfile.write(b_content)
+            await tmpfile.seek(0)
 
-            result = await client.loop.run_in_executor(None, model.transcribe, f.name)
+            result = await client.loop.run_in_executor(
+                None, MODEL.transcribe, tmpfile.name
+            )
             transcript = result["text"]
 
         if transcript:
