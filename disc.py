@@ -1,13 +1,13 @@
 """Discord bot to transcribe voice notes and reply with feedback"""
 import os
+import random
+import string
 
-import asynctempfile
 import discord
 import httpx
 import openai
 import tiktoken_async
 import whisper
-
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 MODEL = whisper.load_model("base")
@@ -40,14 +40,24 @@ class MyClient(discord.Client):
                 resp = await httpx_client.get(url)
                 b_content = resp.content
 
-            async with asynctempfile.NamedTemporaryFile("wb+") as tmpfile:
-                await tmpfile.write(b_content)
-                await tmpfile.seek(0)
-
-                result = await client.loop.run_in_executor(
-                    None, MODEL.transcribe, tmpfile.name
+            filename = (
+                "".join(
+                    random.choice(string.ascii_uppercase + string.digits)
+                    for _ in range(6)
                 )
-                transcript = result["text"]
+                + ".ogg"
+            )
+
+            # write bcontent to file for transcription
+            with open(filename, "wb") as ff:
+                ff.write(b_content)
+                ff.seek(0)
+
+            audio_file = open(filename, "rb")
+            trans = await openai.Audio.atranscribe("whisper-1", audio_file)
+            audio_file.close()
+            os.remove(filename)
+            transcript = trans["text"]
 
             if transcript:
                 # count tokens async
