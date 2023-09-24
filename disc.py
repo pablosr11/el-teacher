@@ -7,11 +7,8 @@ import discord
 import httpx
 import openai
 import tiktoken_async
-import whisper
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-MODEL = whisper.load_model("base")
-
 
 class MyClient(discord.Client):
     """Discord client"""
