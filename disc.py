@@ -7,8 +7,15 @@ import discord
 import httpx
 import openai
 import tiktoken_async
+from upstash_redis.asyncio import Redis
 
+DEFAULT_CONVERSATION_CREDITS = 100
 openai.api_key = os.getenv("OPENAI_API_KEY")
+redis = Redis(
+    url=os.getenv("REDIS_URI"),
+    token=os.getenv("REDIS_PASS"), 
+    allow_telemetry=False
+    )
 
 class MyClient(discord.Client):
     """Discord client"""
@@ -17,9 +24,13 @@ class MyClient(discord.Client):
         """Handle client ready event"""
         print(f"Logged in as {self.user} (ID: {self.user.id})")
         print("------")
+        self.power = await client.fetch_user(os.getenv("POWERUSER_ID"))
 
     async def on_message(self, message: discord.Message):
         """Handle incoming messages"""
+        IS_AUDIO = False
+
+
 
         # stop bot from replying to itself
         if message.author == client.user:
@@ -31,8 +42,24 @@ class MyClient(discord.Client):
             return
 
         if len(message.attachments) > 0:
+            IS_AUDIO = True
             url = message.attachments[0].url
 
+            author = message.author.name       
+            conv_left = await redis.decr(author)
+
+            if conv_left == -1: # doesnt exist
+                await redis.set(author, DEFAULT_CONVERSATION_CREDITS)
+                conv_left = DEFAULT_CONVERSATION_CREDITS
+
+
+            if not conv_left or conv_left == 0:
+                await message.channel.send("You have no more conversations left. We will be in touch. Alternatively, send a small message to https://psiesta.com")
+                await self.power.send(f"Out of credits: {author}\n*** SET {author} {DEFAULT_CONVERSATION_CREDITS}***\n")
+                return
+
+            await message.channel.send("Thanks for your message. Your feedback is being generated...")
+    
             async with httpx.AsyncClient() as httpx_client:
                 resp = await httpx_client.get(url)
                 b_content = resp.content
@@ -63,11 +90,14 @@ class MyClient(discord.Client):
                     None, encoder.encode, transcript
                 )
                 if len(n_tokens) < 10:
-                    return await message.channel.send(
-                        "I can't understand that, please try again."
+                    await message.channel.send(
+                        "Audio message has to be longer. We could not process your message."
                     )
+                    return
 
                 msg = f"Hello! This is my speech. Let me know what I can improve.\n\n{transcript}"
+
+                await self.power.send(f"new: {author} | is_audio: {IS_AUDIO} | conv_left: {conv_left}")
 
                 completion = await openai.ChatCompletion.acreate(
                     model="gpt-3.5-turbo",
