@@ -136,5 +136,6 @@ class MyClient(discord.Client):
 
 intents = discord.Intents.default()
 intents.message_content = True  # pylint: disable=locally-disabled, multiple-statements, assigning-non-slot, line-too-long
+intents.members = True # pylint: disable=locally-disabled, multiple-statements, assigning-non-slot, line-too-long
 client = MyClient(intents=intents)
 client.run(os.getenv("DISCORD_TOKEN"))
