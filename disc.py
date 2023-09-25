@@ -1,4 +1,5 @@
 """Discord bot to transcribe voice notes and reply with feedback"""
+import asyncio
 import os
 import random
 import string
@@ -36,13 +37,18 @@ class MyClient(discord.Client):
         if message.author == client.user:
             return
 
+        IS_AUDIO = len(message.attachments) > 0
+        author = message.author.name
         channel = message.channel
+
+        await self.power.send(f"***new***: {author} | ***is_audio***: {IS_AUDIO} | ***channel***: {channel}")
+        await asyncio.sleep(0.2)
+
         if "Direct Message" not in str(channel):
             await message.channel.send("I only reply in DMs")
             return
 
         if len(message.attachments) > 0:
-            IS_AUDIO = True
             url = message.attachments[0].url
 
             author = message.author.name       
@@ -96,8 +102,6 @@ class MyClient(discord.Client):
                     return
 
                 msg = f"Hello! This is my speech. Let me know what I can improve.\n\n{transcript}"
-
-                await self.power.send(f"new: {author} | is_audio: {IS_AUDIO} | conv_left: {conv_left}")
 
                 completion = await openai.ChatCompletion.acreate(
                     model="gpt-3.5-turbo",
