@@ -21,6 +21,12 @@ redis = Redis(
 class MyClient(discord.Client):
     """Discord client"""
 
+    async def on_member_join(self, member:discord.Member):
+        """Handle member join event"""
+        channel = await member.create_dm()
+        await channel.send("Welcome to the server! Send me a voice note about a topic and I will try to provide feedback")
+        return
+
     async def on_ready(self):
         """Handle client ready event"""
         print(f"Logged in as {self.user} (ID: {self.user.id})")
@@ -29,7 +35,6 @@ class MyClient(discord.Client):
 
     async def on_message(self, message: discord.Message):
         """Handle incoming messages"""
-        IS_AUDIO = False
 
 
 
