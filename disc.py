@@ -25,6 +25,8 @@ class MyClient(discord.Client):
         """Handle member join event"""
         channel = await member.create_dm()
         await channel.send("Welcome to the server! Send me a voice note about a topic and I will try to provide feedback")
+        await asyncio.sleep(0.1)
+        await self.power.send(f"***new_joiner***: {member.name}")
         return
 
     async def on_ready(self):
