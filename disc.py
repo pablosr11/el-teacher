@@ -8,8 +8,10 @@ import discord
 import httpx
 import openai
 import tiktoken_async
+from dotenv import load_dotenv
 from upstash_redis.asyncio import Redis
 
+load_dotenv()
 DEFAULT_CONVERSATION_CREDITS = 100
 openai.api_key = os.getenv("OPENAI_API_KEY")
 redis = Redis(
