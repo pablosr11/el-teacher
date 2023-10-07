@@ -41,6 +41,8 @@ class MyClient(discord.Client):
         """Handle incoming messages"""
 
 
+        # how to enable people to talk to bot directly without joining a server
+        # generate headline and store in redis along with credits.
 
         # stop bot from replying to itself
         if message.author == client.user:
@@ -51,7 +53,7 @@ class MyClient(discord.Client):
         channel = message.channel
 
         await self.power.send(f"***new***: {author} | ***is_audio***: {IS_AUDIO} | ***channel***: {channel}")
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.1)
 
         if "Direct Message" not in str(channel):
             await message.channel.send("I only reply in DMs")
@@ -87,7 +89,7 @@ class MyClient(discord.Client):
                 + ".ogg"
             )
 
-            # write bcontent to file for transcription
+            ## turn this into async
             with open(filename, "wb") as ff:
                 ff.write(b_content)
                 ff.seek(0)
@@ -110,17 +112,17 @@ class MyClient(discord.Client):
                     )
                     return
 
-                msg = f"Hello! This is my speech. Let me know what I can improve.\n\n{transcript}"
+                msg = transcript
 
                 completion = await openai.ChatCompletion.acreate(
                     model="gpt-3.5-turbo",
                     messages=[
                         {
                             "role": "system",
-                            "content": "You are a helpful teacher, judge, assistant. \
-                                People come to you with speeches and explanations \
-                                and you provide feedback about the content. From \
-                                mistakes in the facts, to the structure of the speech. \
+                            "content": "You are a helpful teacher, judge, assistant. With a lot of life experiences. \
+                                People come to you with speeches and explanations and questions \
+                                and you provide helpful feedbackt. From \
+                                mistakes in the facts, to the structure of the speech to any other suggestions. \
                                 If possible you suggest other related topics to learn \
                                 too. You always reply in the language of the speech.",
                         },
